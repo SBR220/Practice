@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Alphabet Opposite Letter Quiz</title>
+
+<style>
+:root{
+  --primary:#4f46e5;
+  --success:#22c55e;
+  --danger:#ef4444;
+  --bg:#eef2ff;
+  --card:#ffffff;
+}
+*{box-sizing:border-box;font-family:Segoe UI,sans-serif}
+body{
+  margin:0;
+  background:linear-gradient(135deg,#e0e7ff,#f8fafc);
+  min-height:100vh;
+  display:flex;
+  justify-content:center;
+  align-items:center;
+}
+.container{max-width:900px;width:100%;padding:15px}
+.card{
+  background:var(--card);
+  border-radius:16px;
+  padding:20px;
+  box-shadow:0 15px 30px rgba(0,0,0,.15);
+}
+h1,h2,h3{text-align:center;margin-top:0}
+.hidden{display:none}
+
+.btn{
+  padding:12px 18px;
+  border:none;
+  border-radius:12px;
+  font-size:16px;
+  font-weight:600;
+  cursor:pointer;
+  color:#fff;
+  background:var(--primary);
+  box-shadow:0 6px #3730a3;
+}
+.btn:active{
+  transform:translateY(4px);
+  box-shadow:0 2px #3730a3;
+}
+.btn.success{
+  background:var(--success);
+  box-shadow:0 6px #15803d;
+}
+
+.range-buttons{
+  display:flex;
+  justify-content:center;
+  gap:12px;
+  flex-wrap:wrap;
+  margin-top:20px;
+}
+
+.quiz-header{
+  display:flex;
+  justify-content:space-between;
+  font-weight:600;
+  flex-wrap:wrap;
+  margin-bottom:15px;
+}
+
+.question{
+  font-size:22px;
+  text-align:center;
+  margin:20px 0;
+}
+
+.options{
+  display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(120px,1fr));
+  gap:15px;
+}
+
+.option{
+  background:#e5e7eb;
+  padding:15px;
+  border-radius:12px;
+  text-align:center;
+  font-size:18px;
+  font-weight:600;
+  cursor:pointer;
+  box-shadow:0 6px #9ca3af;
+}
+.option:active{
+  transform:translateY(4px);
+  box-shadow:0 2px #9ca3af;
+}
+.option.correct{background:#bbf7d0}
+.option.wrong{background:#fecaca}
+
+.summary{
+  display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(200px,1fr));
+  gap:15px;
+  margin-top:15px;
+}
+.summary div{
+  background:#eef2ff;
+  padding:12px;
+  border-radius:10px;
+  font-weight:600;
+  text-align:center;
+}
+
+.solution{
+  background:#f8fafc;
+  margin-top:10px;
+  padding:12px;
+  border-radius:10px;
+}
+</style>
+</head>
+
+<body>
+<div class="container">
+
+<!-- START -->
+<div class="card" id="start">
+  <h1>Alphabet Opposite Letter Quiz</h1>
+  <p style="text-align:center">A ↔ Z, B ↔ Y, M ↔ N</p>
+
+  <h3>Select Number of Questions</h3>
+  <div class="range-buttons">
+    <button class="btn" onclick="startQuiz(10)">10 Questions</button>
+    <button class="btn" onclick="startQuiz(20)">20 Questions</button>
+    <button class="btn" onclick="startQuiz(30)">30 Questions</button>
+  </div>
+</div>
+
+<!-- QUIZ -->
+<div class="card hidden" id="quiz">
+  <div class="quiz-header">
+    <div id="qCount"></div>
+    <div id="timer">Time: 0s</div>
+  </div>
+
+  <div class="question" id="question"></div>
+  <div class="options" id="options"></div>
+</div>
+
+<!-- RESULT -->
+<div class="card hidden" id="result">
+  <h2>Quiz Result</h2>
+
+  <div class="summary">
+    <div id="correct"></div>
+    <div id="wrong"></div>
+    <div id="totalTime"></div>
+    <div id="avgTime"></div>
+  </div>
+
+  <div id="solutions"></div>
+
+  <div style="text-align:center;margin-top:20px">
+    <button class="btn success" onclick="location.reload()">Restart Quiz</button>
+  </div>
+</div>
+
+</div>
+
+<script>
+const letters="ABCDEFGHIJKLMNOPQRSTUVWXYZ".split("");
+let qList=[],current=0,correct=0,wrong=0,startTime,timerInt,qStart;
+let log=[];
+
+function startQuiz(count){
+  document.getElementById("start").classList.add("hidden");
+  document.getElementById("quiz").classList.remove("hidden");
+
+  qList=shuffle([...letters]).slice(0,count);
+  current=correct=wrong=0;
+  log=[];
+  startTime=Date.now();
+
+  timerInt=setInterval(()=>{
+    document.getElementById("timer").innerText=
+      "Time: "+Math.floor((Date.now()-startTime)/1000)+"s";
+  },1000);
+
+  loadQuestion();
+}
+
+function loadQuestion(){
+  qStart=Date.now();
+  const letter=qList[current];
+  document.getElementById("qCount").innerText=
+    `Question ${current+1}/${qList.length}`;
+  document.getElementById("question").innerText=
+    `What is the opposite letter of "${letter}" ?`;
+
+  const correctAns=letters[26-(letters.indexOf(letter)+1)];
+  let opts=[correctAns];
+
+  while(opts.length<4){
+    let r=letters[Math.floor(Math.random()*26)];
+    if(!opts.includes(r)) opts.push(r);
+  }
+  opts=shuffle(opts);
+
+  const box=document.getElementById("options");
+  box.innerHTML="";
+  opts.forEach(o=>{
+    const d=document.createElement("div");
+    d.className="option";
+    d.innerText=o;
+    d.onclick=()=>check(o,correctAns,d);
+    box.appendChild(d);
+  });
+}
+
+function check(sel,ans,btn){
+  const time=((Date.now()-qStart)/1000).toFixed(2);
+  document.querySelectorAll(".option").forEach(o=>o.style.pointerEvents="none");
+
+  if(sel===ans){btn.classList.add("correct");correct++}
+  else{
+    btn.classList.add("wrong");wrong++;
+    document.querySelectorAll(".option").forEach(o=>{
+      if(o.innerText===ans) o.classList.add("correct");
+    });
+  }
+
+  log.push({q:qList[current],a:ans,y:sel,t:time});
+
+  setTimeout(()=>{
+    current++;
+    current<qList.length?loadQuestion():finish();
+  },900);
+}
+
+function finish(){
+  clearInterval(timerInt);
+  document.getElementById("quiz").classList.add("hidden");
+  document.getElementById("result").classList.remove("hidden");
+
+  const total=Math.floor((Date.now()-startTime)/1000);
+  document.getElementById("correct").innerText="Correct: "+correct;
+  document.getElementById("wrong").innerText="Incorrect: "+wrong;
+  document.getElementById("totalTime").innerText="Total Time: "+total+"s";
+  document.getElementById("avgTime").innerText=
+    "Avg Time/Q: "+(total/qList.length).toFixed(2)+"s";
+
+  const s=document.getElementById("solutions");
+  s.innerHTML="<h3>Solutions</h3>";
+  log.forEach((d,i)=>{
+    s.innerHTML+=`
+      <div class="solution">
+        Q${i+1}: Opposite of ${d.q} = ${d.a}<br>
+        Your Answer: ${d.y}<br>
+        Time Taken: ${d.t} sec
+      </div>`;
+  });
+}
+
+function shuffle(a){
+  for(let i=a.length-1;i>0;i--){
+    let j=Math.floor(Math.random()*(i+1));
+    [a[i],a[j]]=[a[j],a[i]];
+  }
+  return a;
+}
+</script>
+</body>
+</html>
